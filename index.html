@@ -2,78 +2,181 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Codenames DizZy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Codenames DizZy Sync Pro</title>
     <style>
-        body { font-family: sans-serif; text-align: center; background: #f0f2f5; margin: 0; padding: 20px; }
-        .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; max-width: 800px; margin: 20px auto; }
-        .card { height: 80px; display: flex; align-items: center; justify-content: center; background: white; border-radius: 8px; cursor: pointer; font-weight: bold; text-transform: uppercase; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 3px solid transparent; transition: 0.3s; }
-        .card.red { background: #ff4d4d !important; color: white; }
-        .card.blue { background: #4d79ff !important; color: white; }
-        .card.neutral { background: #e0e0e0 !important; color: #333; }
-        .card.assassin { background: #333 !important; color: white; }
-        .controls { margin-bottom: 20px; }
-        button { padding: 10px 20px; font-size: 16px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
-        #spymaster-btn { background: #6c757d; margin-left: 10px; }
-        .hidden-role { border-style: dashed !important; border-color: #999; }
+        :root {
+            --red: #ff4d4d; --blue: #4d79ff; --neutral: #d1d1d1; --black: #2c3e50;
+            --bg: #f0f2f5; --card-bg: #ffffff;
+        }
+        body { 
+            font-family: 'Segoe UI', Tahoma, sans-serif; 
+            background: var(--bg); margin: 0; padding: 10px; 
+            color: #333; display: flex; flex-direction: column; align-items: center;
+        }
+        .container { width: 100%; max-width: 800px; }
+        
+        h1 { font-size: 1.5rem; margin: 10px 0; color: var(--black); text-align: center; }
+
+        /* Панель управления */
+        .controls { 
+            display: flex; flex-wrap: wrap; justify-content: center; 
+            gap: 8px; margin-bottom: 15px; width: 100%;
+        }
+        button { 
+            padding: 10px 16px; border-radius: 8px; border: none; 
+            background: var(--black); color: white; font-weight: bold; 
+            cursor: pointer; transition: 0.2s; font-size: 0.85rem;
+            display: flex; align-items: center; gap: 5px;
+        }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        button:active { transform: translateY(0); }
+        .btn-spy { background: #7f8c8d; }
+        .btn-copy { background: #27ae60; }
+        .btn-new { background: #2980b9; }
+
+        /* Инфо-панель */
+        .info-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            background: white; padding: 10px 15px; border-radius: 10px;
+            margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        #room-display { font-size: 0.8rem; font-weight: bold; color: #7f8c8d; }
+
+        /* Сетка игры */
+        .grid { 
+            display: grid; grid-template-columns: repeat(5, 1fr); 
+            gap: 8px; width: 100%;
+        }
+
+        /* Карточки */
+        .card { 
+            aspect-ratio: 3 / 2; display: flex; align-items: center; justify-content: center; 
+            background: var(--card-bg); border-radius: 8px; cursor: pointer; 
+            font-weight: bold; text-transform: uppercase; text-align: center;
+            font-size: clamp(0.65rem, 2.5vw, 1rem); padding: 5px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.08); border: 2px solid transparent; 
+            transition: all 0.2s ease; user-select: none; word-break: break-word;
+        }
+        
+        /* Цвета открытых карт */
+        .card.revealed.red { background: var(--red) !important; color: white; }
+        .card.revealed.blue { background: var(--blue) !important; color: white; }
+        .card.revealed.neutral { background: var(--neutral) !important; color: #555; }
+        .card.revealed.assassin { background: var(--black) !important; color: white; }
+
+        /* Режим капитана */
+        .spymaster-mode .card:not(.revealed) { opacity: 0.6; border-style: dashed; }
+        .spymaster-mode .card.red { border-color: var(--red); color: var(--red); background: #fff5f5; }
+        .spymaster-mode .card.blue { border-color: var(--blue); color: var(--blue); background: #f5f7ff; }
+        .spymaster-mode .card.neutral { border-color: #999; color: #999; }
+        .spymaster-mode .card.assassin { border-color: var(--black); color: var(--black); background: #eee; }
+
+        @media (max-width: 480px) {
+            .grid { gap: 5px; }
+            .card { border-radius: 5px; padding: 2px; }
+        }
     </style>
 </head>
 <body>
 
+<div class="container">
     <h1>Codenames DizZy</h1>
+    
     <div class="controls">
-        <button onclick="initGame()">Новая игра</button>
-        <button id="spymaster-btn" onclick="toggleSpymaster()">Режим капитана</button>
+        <button class="btn-new" onclick="newRoom()">🎲 Новая игра</button>
+        <button class="btn-copy" onclick="copyLink()">🔗 Ссылка</button>
+        <button id="spy-btn" class="btn-spy" onclick="toggleSpymaster()">🕶 Капитан</button>
     </div>
+
+    <div class="info-bar">
+        <div id="room-display">ROOM: ----</div>
+        <div style="font-size: 0.9rem;">
+            <span style="color:var(--red)">●</span> <span id="r-count">8</span> &nbsp;
+            <span style="color:var(--blue)">●</span> <span id="b-count">7</span>
+        </div>
+    </div>
+
     <div id="board" class="grid"></div>
+</div>
 
-    <script>
-        const words = ["Яблоко", "Банк", "Коса", "Ключ", "Замок", "Мир", "Ручка", "Стол", "Поле", "Звезда", "Луна", "Вода", "Огонь", "Король", "Слон", "Гитара", "Экран", "Поезд", "Книга", "Лёд", "Маска", "Крот", "Берлин", "Опера", "Ток"];
-        let isSpymaster = false;
-        let boardState = [];
+<script>
+    const dictionary = ["Агент", "Айсберг", "Актер", "Алмаз", "Африка", "Банк", "Башня", "Билет", "Бог", "Бомба", "Ботинок", "Борщ", "Бумага", "Ваза", "Ветер", "Вилка", "Вода", "Война", "Гитара", "Глаз", "Гора", "Город", "Гриб", "Дерево", "Деньги", "Дождь", "Дракон", "Замок", "Звезда", "Земля", "Зуб", "Игра", "Ключ", "Книга", "Кольцо", "Корабль", "Король", "Коса", "Крот", "Крыса", "Лед", "Лев", "Лист", "Луна", "Маска", "Медведь", "Мир", "Море", "Мост", "Мышь", "Мяч", "Небо", "Нож", "Ночь", "Огонь", "Окно", "Океан", "Орел", "Остров", "Очки", "Палец", "Парк", "Пилот", "Пирамида", "Поезд", "Поле", "Почта", "Река", "Робот", "Роза", "Рука", "Рыба", "Сад", "Самолет", "Свет", "Сердце", "Слон", "Смерть", "Снег", "Собака", "Солнце", "Соль", "Спорт", "Стена", "Стол", "Стрела", "Стул", "Тень", "Тигр", "Ток", "Трава", "Труба", "Угол", "Удача", "Улыбка", "Ухо", "Учитель", "Флаг", "Фокус", "Фонтан", "Франция", "Хвост", "Хлеб", "Холод", "Храм", "Царь", "Цветок", "Цепь", "Цирк", "Чай", "Часы", "Человек", "Чемодан", "Шахматы", "Шарф", "Шпион", "Штат", "Щетка", "Щит", "Экран", "Эльф", "Энергия", "Юпитер", "Яблоко", "Якорь", "Япония", "Ящик"];
 
-        function initGame() {
-            isSpymaster = false;
-            const shuffledWords = [...words].sort(() => 0.5 - Math.random());
-            const types = ['assassin', ...Array(8).fill('red'), ...Array(7).fill('blue'), ...Array(9).fill('neutral')].sort(() => 0.5 - Math.random());
-            
-            boardState = shuffledWords.slice(0, 25).map((word, i) => ({
-                word, type: types[i], revealed: false
-            }));
-            render();
+    let isSpymaster = false;
+    let boardState = [];
+
+    function seedRandom(seed) {
+        return function() {
+            seed = (seed * 9301 + 49297) % 233280;
+            return seed / 233280;
+        };
+    }
+
+    function initGame() {
+        const urlParams = new URLSearchParams(window.location.search);
+        let room = urlParams.get('room');
+        
+        if (!room) {
+            room = Math.floor(Math.random() * 8999) + 1000;
+            window.history.pushState({}, '', '?room=' + room);
         }
+        
+        document.getElementById('room-display').innerText = "ROOM: " + room;
+        const myRandom = seedRandom(parseInt(room));
 
-        function render() {
-            const board = document.getElementById('board');
-            board.innerHTML = '';
-            boardState.forEach((card, i) => {
-                const div = document.createElement('div');
-                div.className = 'card';
-                div.innerText = card.word;
-                
-                if (card.revealed || isSpymaster) {
-                    div.classList.add(card.type);
-                }
-                if (isSpymaster && !card.revealed) {
-                    div.classList.add('hidden-role');
-                }
-                
-                div.onclick = () => {
-                    if (!isSpymaster) {
-                        boardState[i].revealed = true;
-                        render();
-                    }
-                };
-                board.appendChild(div);
-            });
-        }
+        const shuffled = [...dictionary].sort(() => 0.5 - myRandom());
+        const types = ['assassin', ...Array(8).fill('red'), ...Array(7).fill('blue'), ...Array(9).fill('neutral')].sort(() => 0.5 - myRandom());
 
-        function toggleSpymaster() {
-            isSpymaster = !isSpymaster;
-            render();
-        }
+        boardState = shuffled.slice(0, 25).map((word, i) => ({
+            word, type: types[i], revealed: false
+        }));
+        updateCounts();
+        render();
+    }
 
-        initGame();
-    </script>
+    function render() {
+        const board = document.getElementById('board');
+        board.innerHTML = '';
+        boardState.forEach((card, i) => {
+            const div = document.createElement('div');
+            div.className = 'card' + (card.revealed ? ' revealed ' + card.type : '');
+            if (isSpymaster) div.classList.add(card.type);
+            div.innerText = card.word;
+            div.onclick = () => { 
+                if (!isSpymaster && !card.revealed) { 
+                    card.revealed = true; 
+                    if(card.type === 'assassin') alert("💀 УБИЙЦА! Конец игры.");
+                    updateCounts();
+                    render(); 
+                } 
+            };
+            board.appendChild(div);
+        });
+    }
+
+    function updateCounts() {
+        document.getElementById('r-count').innerText = boardState.filter(c => c.type === 'red' && !c.revealed).length;
+        document.getElementById('b-count').innerText = boardState.filter(c => c.type === 'blue' && !c.revealed).length;
+    }
+
+    function copyLink() {
+        navigator.clipboard.writeText(window.location.href);
+        alert("Ссылка скопирована! Отправь её коллегам.");
+    }
+
+    function newRoom() {
+        window.location.href = '?room=' + (Math.floor(Math.random() * 8999) + 1000);
+    }
+
+    function toggleSpymaster() {
+        isSpymaster = !isSpymaster;
+        document.getElementById('board').classList.toggle('spymaster-mode');
+        document.getElementById('spy-btn').style.background = isSpymaster ? "#e67e22" : "#7f8c8d";
+        render();
+    }
+
+    initGame();
+</script>
 </body>
 </html>
