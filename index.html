@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Codenames Lite</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #f0f2f5; margin: 0; padding: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; max-width: 800px; margin: 20px auto; }
+        .card { height: 80px; display: flex; align-items: center; justify-content: center; background: white; border-radius: 8px; cursor: pointer; font-weight: bold; text-transform: uppercase; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 3px solid transparent; transition: 0.3s; }
+        .card.red { background: #ff4d4d !important; color: white; }
+        .card.blue { background: #4d79ff !important; color: white; }
+        .card.neutral { background: #e0e0e0 !important; color: #333; }
+        .card.assassin { background: #333 !important; color: white; }
+        .controls { margin-bottom: 20px; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
+        #spymaster-btn { background: #6c757d; margin-left: 10px; }
+        .hidden-role { border-style: dashed !important; border-color: #999; }
+    </style>
+</head>
+<body>
+
+    <h1>Codenames Lite</h1>
+    <div class="controls">
+        <button onclick="initGame()">Новая игра</button>
+        <button id="spymaster-btn" onclick="toggleSpymaster()">Режим капитана</button>
+    </div>
+    <div id="board" class="grid"></div>
+
+    <script>
+        const words = ["Яблоко", "Банк", "Коса", "Ключ", "Замок", "Мир", "Ручка", "Стол", "Поле", "Звезда", "Луна", "Вода", "Огонь", "Король", "Слон", "Гитара", "Экран", "Поезд", "Книга", "Лёд", "Маска", "Крот", "Берлин", "Опера", "Ток"];
+        let isSpymaster = false;
+        let boardState = [];
+
+        function initGame() {
+            isSpymaster = false;
+            const shuffledWords = [...words].sort(() => 0.5 - Math.random());
+            const types = ['assassin', ...Array(8).fill('red'), ...Array(7).fill('blue'), ...Array(9).fill('neutral')].sort(() => 0.5 - Math.random());
+            
+            boardState = shuffledWords.slice(0, 25).map((word, i) => ({
+                word, type: types[i], revealed: false
+            }));
+            render();
+        }
+
+        function render() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+            boardState.forEach((card, i) => {
+                const div = document.createElement('div');
+                div.className = 'card';
+                div.innerText = card.word;
+                
+                if (card.revealed || isSpymaster) {
+                    div.classList.add(card.type);
+                }
+                if (isSpymaster && !card.revealed) {
+                    div.classList.add('hidden-role');
+                }
+                
+                div.onclick = () => {
+                    if (!isSpymaster) {
+                        boardState[i].revealed = true;
+                        render();
+                    }
+                };
+                board.appendChild(div);
+            });
+        }
+
+        function toggleSpymaster() {
+            isSpymaster = !isSpymaster;
+            render();
+        }
+
+        initGame();
+    </script>
+</body>
+</html>
