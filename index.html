@@ -117,9 +117,11 @@
         const urlParams = new URLSearchParams(window.location.search);
         let room = urlParams.get('room');
         
+        // Если в URL нет комнаты, создаем её и ПЕРЕЗАГРУЖАЕМ с этим ID
         if (!room) {
             room = Math.floor(Math.random() * 8999) + 1000;
-            window.history.pushState({}, '', '?room=' + room);
+            window.location.search = '?room=' + room;
+            return;
         }
         
         document.getElementById('room-display').innerText = "ROOM: " + room;
@@ -161,12 +163,16 @@
     }
 
     function copyLink() {
-        navigator.clipboard.writeText(window.location.href);
-        alert("Ссылка скопирована! Отправь её коллегам.");
+        const btn = document.querySelector('.btn-copy');
+        navigator.clipboard.writeText(window.location.href).then(() => {
+            const originalText = btn.innerText;
+            btn.innerText = "✅ Готово!";
+            setTimeout(() => btn.innerText = originalText, 2000);
+        });
     }
 
     function newRoom() {
-        window.location.href = '?room=' + (Math.floor(Math.random() * 8999) + 1000);
+        window.location.href = window.location.pathname + '?room=' + (Math.floor(Math.random() * 8999) + 1000);
     }
 
     function toggleSpymaster() {
